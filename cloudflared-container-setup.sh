@@ -18,7 +18,7 @@
 #      f) OPTIONAL: allow skipping IPv4 routing modifications even if 2 NICs present
 #  3) Enable persistent journaling + per-user journals
 #  4) Enable boot-start for user services (linger) for the cloudflared user
-#  5) Write /etc/sysctl.d/99-cloudflared.conf
+#  5) Write /etc/sysctl.d/99-cloudflared.conf to update system limits for ping users and udp socket buffers 
 #  6) OPTIONAL host routes if 2 NICs and routing not skipped:
 #      - default remains on eth0
 #      - RFC1918 prefixes via eth1 next-hop (prompted)
@@ -27,6 +27,7 @@
 #  7) Pull cloudflared image (fully-qualified docker.io/cloudflare/cloudflared:<tag>)
 #  8) Create Quadlet base + drop-ins
 #  9) Start the cloudflared.service (systemd --user) for the selected user
+# 10) Write /etc/profile.d/cloudflare-alias.sh
 #
 # Notes:
 #  - Token is stored on disk in a drop-in file (0600). Protect the user account.
@@ -328,6 +329,17 @@ main() {
 
   pull_cloudflared_image_rootless "${CF_USER}" "${CF_TAG}"
   create_quadlet_rootless "${CF_USER}" "${CF_TAG}" "${CF_TOKEN}"
+
+  info "Installing cloudflared aliases for user ${CF_USER}"
+
+  cat >/etc/profile.d/cloudflared-aliases.sh <<EOF
+alias cloudflared-status='sudo -u ${CF_USER} XDG_RUNTIME_DIR=/run/user/\$(id -u ${CF_USER}) systemctl --user status cloudflared.service'
+alias cloudflared-stop='sudo -u ${CF_USER} XDG_RUNTIME_DIR=/run/user/\$(id -u ${CF_USER}) systemctl --user stop cloudflared.service'
+alias cloudflared-start='sudo -u ${CF_USER} XDG_RUNTIME_DIR=/run/user/\$(id -u ${CF_USER}) systemctl --user start cloudflared.service'
+alias cloudflared-restart='sudo -u ${CF_USER} XDG_RUNTIME_DIR=/run/user/\$(id -u ${CF_USER}) systemctl --user restart cloudflared.service'
+EOF
+
+  chmod 0644 /etc/profile.d/cloudflared-aliases.sh
 
   info "Done. Verify after reboot:"
   echo "  sudo -u ${CF_USER} env XDG_RUNTIME_DIR=/run/user/\$(id -u ${CF_USER}) systemctl --user status cloudflared.service -l --no-pager"
