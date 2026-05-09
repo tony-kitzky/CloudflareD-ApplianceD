@@ -219,7 +219,7 @@ create_quadlet_rootless() {
   container_file="${quadlet_dir}/cloudflared.container"
   dropin_dir="${quadlet_dir}/cloudflared.container.d"
   image_dropin="${dropin_dir}/40-image.conf"
-  icmp_dropin="$(dropin_dir)/50-icmp.conf"
+  icmp_dropin="${dropin_dir}/50-icmp.conf"
   token_dropin="${dropin_dir}/50-token.conf"
 
   info "Creating Quadlet files for user $u"
