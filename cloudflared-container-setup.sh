@@ -219,6 +219,7 @@ create_quadlet_rootless() {
   container_file="${quadlet_dir}/cloudflared.container"
   dropin_dir="${quadlet_dir}/cloudflared.container.d"
   image_dropin="${dropin_dir}/40-image.conf"
+  icmp_dropin="$(dropin_dir)/50-icmp.conf"
   token_dropin="${dropin_dir}/50-token.conf"
 
   info "Creating Quadlet files for user $u"
@@ -253,6 +254,14 @@ Pull=never
 EOF
   chown "$u:$u" "$image_dropin"
   chmod 0600 "$image_dropin"
+
+  cat >"$icmp_dropin" <<EOF
+[Container]
+Sysctl="net.ipv4.ping_group_range=65532 65532"
+EOF
+  chown "$u:$u" "$icmp_dropin"
+  chown 0600 "$icmp_dropin"
+
 
   cat >"$token_dropin" <<EOF
 [Container]
